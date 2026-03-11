@@ -64,7 +64,8 @@ class JobScheduler:
                 jobs, 
                 config.profile_path,
                 config.match_score_threshold,
-                config.max_experience_years
+                config.max_experience_years,
+                config.current_company
             )
             logger.info(f"Relevant jobs found: {len(matched_jobs)}")
             

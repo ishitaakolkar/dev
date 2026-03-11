@@ -22,7 +22,8 @@ class ProfileManager:
                 "skills": [],
                 "projects": [],
                 "achievements": [],
-                "target_companies": []
+                "target_companies": [],
+                "current_company": ""
             }
             self.save_profile(default_profile)
             logger.info(f"Created new profile: {self.profile_path}")

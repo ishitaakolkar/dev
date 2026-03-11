@@ -71,6 +71,8 @@ def profile_page():
         name = st.text_input("Name", value=profile.get('name', ''))
         email = st.text_input("Email", value=profile.get('email', ''))
         linkedin_url = st.text_input("LinkedIn URL", value=profile.get('linkedin_url', ''))
+        current_company = st.text_input("Current Company (to avoid accidental applications)", 
+                                     value=profile.get('current_company', ''))
     
     with col2:
         # Resume upload and parsing
@@ -173,27 +175,33 @@ def profile_page():
     # Save button
     if st.button("💾 Save Profile", type="primary"):
         updated_profile = {
-            'name': name,
-            'email': email,
-            'linkedin_url': linkedin_url,
-            'preferred_roles': [role.strip() for role in preferred_roles.split('\n') if role.strip()],
-            'preferred_locations': [loc.strip() for loc in preferred_locations.split('\n') if loc.strip()],
-            'target_companies': [comp.strip() for comp in target_companies.split('\n') if comp.strip()],
-            'skills': [skill.strip() for skill in skills.split(',') if skill.strip()],
-            'projects': profile.get('projects', []),  # Keep existing projects
-            'achievements': [achievement.strip() for achievement in achievements.split('\n') if achievement.strip()]
-        }
-        
+                'name': name,
+                'email': email,
+                'linkedin_url': linkedin_url,
+                'current_company': current_company,
+                'preferred_roles': [role.strip() for role in preferred_roles.split('\n') if role.strip()],
+                'preferred_locations': [loc.strip() for loc in preferred_locations.split('\n') if loc.strip()],
+                'target_companies': [comp.strip() for comp in target_companies.split('\n') if comp.strip()],
+                'skills': [skill.strip() for skill in skills.split(',') if skill.strip()],
+                'projects': profile.get('projects', []),  # Keep existing projects
+                'achievements': [achievement.strip() for achievement in achievements.split('\n') if achievement.strip()]
+            }      
         if profile_manager.save_profile(updated_profile):
             st.success("Profile saved successfully!")
             st.rerun()
         else:
             st.error("Error saving profile")
+    
 
 # Jobs Page
 def jobs_page():
     st.title("🔍 Job Discovery")
     
+    # Current Company Warning
+    if config.current_company:
+        st.warning(f"⚠️ **Current Company Filter Active**: Jobs from '{config.current_company}' will be automatically skipped to avoid accidental applications.")
+    else:
+        st.info("💡 **Tip**: Set your current company in profile or .env file to avoid accidental applications to your current employer.")
     # Check if profile is complete
     missing_fields = profile_manager.validate_profile()
     if missing_fields:
@@ -213,9 +221,11 @@ def jobs_page():
                     if config.gemini_api_key:
                         matcher = JobMatcher(config.gemini_api_key)
                         matched_jobs = matcher.match_jobs(
-                            jobs, config.profile_path, 
+                            jobs, 
+                            config.profile_path, 
                             config.match_score_threshold, 
-                            config.max_experience_years
+                            config.max_experience_years,
+                            config.current_company
                         )
                         
                         # Add to tracker

@@ -64,6 +64,26 @@ class JobMatcher:
         
         return False
     
+    def filter_by_current_company(self, job: Dict, current_company: str) -> bool:
+        """Check if job is from current company and should be skipped"""
+        if not current_company:
+            return True  # No current company set, allow all jobs
+        
+        job_company = job.get('company', '').lower().strip()
+        current_company_lower = current_company.lower().strip()
+        
+        # Exact match
+        if job_company == current_company_lower:
+            logger.info(f"Skipping job from current company: {job.get('company')}")
+            return False
+        
+        # Partial match (for company variations)
+        if current_company_lower in job_company or job_company in current_company_lower:
+            logger.info(f"Skipping job from current company (partial match): {job.get('company')}")
+            return False
+        
+        return True
+    
     def filter_by_experience(self, job: Dict, max_experience: int) -> bool:
         """Check if job experience requirement is within limits"""
         job_desc = job.get('job_description', '')
@@ -130,7 +150,8 @@ class JobMatcher:
         return hashlib.md5(content.encode()).hexdigest()[:16]
     
     def match_jobs(self, jobs: List[Dict], profile_path: str, 
-                   match_threshold: int = 70, max_experience: int = 2) -> List[Dict]:
+                   match_threshold: int = 70, max_experience: int = 2, 
+                   current_company: str = "") -> List[Dict]:
         """Filter and score jobs based on profile"""
         profile = self.load_profile(profile_path)
         if not profile:
@@ -147,6 +168,9 @@ class JobMatcher:
                     continue
                 
                 if not self.filter_by_experience(job, max_experience):
+                    continue
+                
+                if not self.filter_by_current_company(job, current_company):
                     continue
                 
                 # Calculate match score
